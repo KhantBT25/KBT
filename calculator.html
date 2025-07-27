@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the calculator */
+        body {
+            font-family: "Inter", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f4f8; /* Light background */
+        }
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns */
+            gap: 0.75rem; /* Gap between buttons */
+        }
+        .calculator-button {
+            padding: 1.25rem; /* Large padding for touch targets */
+            font-size: 1.5rem;
+            font-weight: 500;
+            border-radius: 0.75rem; /* Rounded corners */
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+        .calculator-button:hover {
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+        .operator {
+            background-color: #3b82f6; /* Blue for operators */
+            color: white;
+        }
+        .operator:hover {
+            background-color: #2563eb;
+        }
+        .number {
+            background-color: #e2e8f0; /* Light grey for numbers */
+            color: #1f2937; /* Dark text */
+        }
+        .number:hover {
+            background-color: #cbd5e1;
+        }
+        .equals {
+            background-color: #10b981; /* Green for equals */
+            color: white;
+            grid-column: span 2; /* Span two columns */
+        }
+        .equals:hover {
+            background-color: #059669;
+        }
+        .clear {
+            background-color: #ef4444; /* Red for clear */
+            color: white;
+        }
+        .clear:hover {
+            background-color: #dc2626;
+        }
+        .display {
+            background-color: #1f2937; /* Dark background for display */
+            color: #e2e8f0; /* Light text */
+            font-size: 2.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            text-align: right;
+            margin-bottom: 1rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2); /* Inset shadow */
+            overflow: hidden; /* Hide overflow text */
+            text-overflow: ellipsis; /* Add ellipsis for long numbers */
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="calculator bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full mx-4">
+        <!-- Calculator Display -->
+        <input type="text" id="display" class="display w-full" value="0" readonly>
+
+        <!-- Calculator Buttons Grid -->
+        <div class="calculator-grid">
+            <button class="calculator-button clear" onclick="clearDisplay()">C</button>
+            <button class="calculator-button operator" onclick="appendToDisplay('/')">/</button>
+            <button class="calculator-button operator" onclick="appendToDisplay('*')">*</button>
+            <button class="calculator-button operator" onclick="appendToDisplay('-')">-</button>
+
+            <button class="calculator-button number" onclick="appendToDisplay('7')">7</button>
+            <button class="calculator-button number" onclick="appendToDisplay('8')">8</button>
+            <button class="calculator-button number" onclick="appendToDisplay('9')">9</button>
+            <button class="calculator-button operator" onclick="appendToDisplay('+')">+</button>
+
+            <button class="calculator-button number" onclick="appendToDisplay('4')">4</button>
+            <button class="calculator-button number" onclick="appendToDisplay('5')">5</button>
+            <button class="calculator-button number" onclick="appendToDisplay('6')">6</button>
+
+            <button class="calculator-button number" onclick="appendToDisplay('1')">1</button>
+            <button class="calculator-button number" onclick="appendToDisplay('2')">2</button>
+            <button class="calculator-button number" onclick="appendToDisplay('3')">3</button>
+            <button class="calculator-button number" onclick="appendToDisplay('0')">0</button>
+
+            <button class="calculator-button number" onclick="appendToDisplay('.')">.</button>
+            <button class="calculator-button equals" onclick="calculateResult()">=</button>
+        </div>
+    </div>
+
+    <script>
+        // Get the display element
+        const display = document.getElementById('display');
+        // Variable to track if the last input was an operator or equals, to reset display for new number
+        let newNumberExpected = false;
+
+        /**
+         * Appends a value to the calculator display.
+         * Handles initial '0' and prevents multiple decimal points.
+         * @param {string} value The character or number to append.
+         */
+        function appendToDisplay(value) {
+            // If the display is '0' and a number (not '.') is pressed, replace '0'
+            if (display.value === '0' && value !== '.') {
+                display.value = value;
+                newNumberExpected = false; // Reset flag after appending
+            } else if (newNumberExpected && !isNaN(value)) { // If new number is expected and input is a number
+                display.value = value;
+                newNumberExpected = false;
+            }
+            else {
+                // Prevent multiple decimal points in a single number
+                if (value === '.' && display.value.includes('.')) {
+                    // Check if the last part of the expression already contains a decimal
+                    const parts = display.value.split(/[\+\-\*\/]/);
+                    if (parts[parts.length - 1].includes('.')) {
+                        return; // Do nothing if a decimal already exists in the current number
+                    }
+                }
+                // Append the value to the display
+                display.value += value;
+                newNumberExpected = false; // Reset flag after appending
+            }
+        }
+
+        /**
+         * Clears the calculator display and resets to '0'.
+         */
+        function clearDisplay() {
+            display.value = '0';
+            newNumberExpected = false;
+        }
+
+        /**
+         * Calculates the result of the expression on the display.
+         * Uses try-catch for error handling of invalid expressions.
+         */
+        function calculateResult() {
+            try {
+                // Evaluate the expression using eval(). Be cautious with eval() in production apps.
+                // For a simple calculator, it's generally acceptable.
+                let result = eval(display.value);
+
+                // Handle potential floating point inaccuracies
+                if (Number.isFinite(result) && Math.abs(result - Math.round(result)) < 1e-9) {
+                    result = Math.round(result);
+                }
+
+                display.value = result;
+                newNumberExpected = true; // Set flag to indicate a new number should replace the result
+            } catch (error) {
+                // Display 'Error' for invalid expressions
+                display.value = 'Error';
+                newNumberExpected = true; // Allow new input after error
+            }
+        }
+    </script>
+</body>
+</html>
